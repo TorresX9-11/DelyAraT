@@ -551,19 +551,27 @@ function configurarMenuMovil() {
 }
 
 // =========================
-// Contador de visitas (CountAPI - gratuito, sin backend)
+// Contador de visitas (CountAPI + proxy CORS para GitHub Pages)
+// El proxy evita el bloqueo CORS: el navegador no puede desactivar CORS;
+// el servidor de la API debe permitir tu dominio. Usamos un proxy público.
 // =========================
 const CONTADOR_NAMESPACE = "tsdelicias";
 const CONTADOR_KEY = "landing";
+const CORS_PROXY = "https://api.allorigins.win/raw?url=";
 
 function actualizarContadorVisitas() {
   const el = document.getElementById("visit-count");
   if (!el) return;
-  fetch(`https://api.countapi.xyz/hit/${CONTADOR_NAMESPACE}/${CONTADOR_KEY}`)
+  const urlCountAPI = `https://api.countapi.xyz/hit/${CONTADOR_NAMESPACE}/${CONTADOR_KEY}`;
+  const urlConProxy = CORS_PROXY + encodeURIComponent(urlCountAPI);
+
+  fetch(urlConProxy)
     .then((res) => res.json())
     .then((data) => {
       if (typeof data.value === "number") {
         el.textContent = data.value.toLocaleString("es-CL");
+      } else {
+        el.textContent = "—";
       }
     })
     .catch(() => {
