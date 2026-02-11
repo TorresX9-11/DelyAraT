@@ -28,8 +28,14 @@ CREATE TABLE IF NOT EXISTS site_stats (
 INSERT INTO site_stats (id, visits) VALUES (1, 0)
 ON CONFLICT (id) DO NOTHING;
 
--- Función que incrementa y devuelve el nuevo total (una sola llamada desde la web)
-CREATE OR REPLACE FUNCTION increment_visits()
+-- Tabla para guardar cada visita con fecha y hora exactas
+CREATE TABLE IF NOT EXISTS visits_log (
+  id BIGSERIAL PRIMARY KEY,
+  visited_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Función: incrementa el contador, guarda la visita con fecha/hora y devuelve el total
+CREATE OR REPLACE FUNCTION log_visit()
 RETURNS BIGINT
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -38,16 +44,42 @@ AS $$
 DECLARE
   new_count BIGINT;
 BEGIN
-  UPDATE site_stats
-  SET visits = visits + 1
-  WHERE id = 1
-  RETURNING visits INTO new_count;
+  UPDATE site_stats SET visits = visits + 1 WHERE id = 1 RETURNING visits INTO new_count;
+  INSERT INTO visits_log (visited_at) VALUES (now());
   RETURN new_count;
 END;
 $$;
 
--- Permitir que la clave anónima (tu frontend) ejecute la función
-GRANT EXECUTE ON FUNCTION public.increment_visits() TO anon;
+-- Permisos para el frontend
+GRANT EXECUTE ON FUNCTION public.log_visit() TO anon;
+```
+
+**Si ya tenías el contador con `increment_visits`:** ejecuta solo este bloque para añadir el registro de visitas (no borra nada):
+
+```sql
+-- Tabla para guardar cada visita con fecha y hora
+CREATE TABLE IF NOT EXISTS visits_log (
+  id BIGSERIAL PRIMARY KEY,
+  visited_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Nueva función que incrementa, guarda la visita y devuelve el total
+CREATE OR REPLACE FUNCTION log_visit()
+RETURNS BIGINT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  new_count BIGINT;
+BEGIN
+  UPDATE site_stats SET visits = visits + 1 WHERE id = 1 RETURNING visits INTO new_count;
+  INSERT INTO visits_log (visited_at) VALUES (now());
+  RETURN new_count;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.log_visit() TO anon;
 ```
 
 ### 3. Copiar URL y clave anónima
@@ -77,4 +109,22 @@ Haz commit y push de los cambios. En GitHub Pages el contador se actualizará en
 
 ---
 
-**Seguridad:** La clave `anon` es pública (va en el frontend). Está pensada para eso. La función `increment_visits()` solo incrementa en 1; no se puede borrar o poner un valor arbitrario porque no exponemos esa opción en la API.
+**Seguridad:** La clave `anon` es pública (va en el frontend). Está pensada para eso. La función `log_visit()` solo registra una visita y devuelve el total; no se puede borrar ni modificar datos desde la web.
+
+---
+
+## Ver las visitas con fecha y hora
+
+En Supabase ve a **Table Editor** → tabla **visits_log**. Ahí verás cada visita con:
+
+- **id**: número de registro
+- **visited_at**: fecha y hora de la visita (en UTC; Supabase puede mostrarla en tu zona horaria según la configuración)
+
+Para ver en hora local (ej. Chile) en SQL:
+
+```sql
+SELECT id, visited_at AT TIME ZONE 'America/Santiago' AS visita_chile
+FROM visits_log
+ORDER BY id DESC
+LIMIT 100;
+```

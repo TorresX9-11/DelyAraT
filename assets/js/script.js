@@ -605,7 +605,7 @@ function actualizarContadorVisitas() {
 
   const configurado = SUPABASE_URL && !SUPABASE_URL.includes("TU_PROJECT") && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== "tu_anon_key_aqui";
   if (configurado) {
-    fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_visits`, {
+    fetch(`${SUPABASE_URL}/rest/v1/rpc/log_visit`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
