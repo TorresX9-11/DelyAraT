@@ -665,20 +665,24 @@ main {
 }
 
 .footer-reset-btn {
-  display: inline-block;
-  margin-top: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.7rem;
-  color: rgba(190, 170, 150, 0.7);
-  background: transparent;
-  border: 1px solid rgba(190, 170, 150, 0.25);
-  border-radius: 4px;
+  margin-left: 0.25rem;
+  padding: 0 0.2rem;
+  font-size: 0.68rem;
+  color: rgba(150, 130, 110, 0.45);
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s;
+  vertical-align: baseline;
 }
 .footer-reset-btn:hover {
-  color: rgba(210, 190, 170, 0.9);
-  border-color: rgba(190, 170, 150, 0.5);
+  color: rgba(190, 170, 150, 0.75);
+}
+.site-footer:hover .footer-reset-btn {
+  color: rgba(150, 130, 110, 0.6);
+}
+.site-footer:hover .footer-reset-btn:hover {
+  color: rgba(190, 170, 150, 0.85);
 }
 
 /* =========================
