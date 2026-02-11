@@ -87,14 +87,13 @@ const formatearPrecio = (valor) =>
     maximumFractionDigits: 0,
   }).format(valor);
 
-// Placeholder cuando una imagen de producto no carga (SVG en base64)
-const IMAGEN_PLACEHOLDER =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%232b1810' width='400' height='300'/%3E%3Ctext x='200' y='150' dominant-baseline='middle' text-anchor='middle' fill='%236b5344' font-family='sans-serif' font-size='16'%3ESin imagen%3C/text%3E%3C/svg%3E";
+// Imagen por defecto cuando un producto no tiene imagen o falla la carga (logo)
+const IMAGEN_POR_DEFECTO = "assets/img/Logos/LogoFinal.png";
 
 function aplicarFallbackImagen(img) {
   img.onerror = function () {
     this.onerror = null;
-    this.src = IMAGEN_PLACEHOLDER;
+    this.src = IMAGEN_POR_DEFECTO;
   };
 }
 
@@ -106,17 +105,28 @@ function crearTarjetaProducto(producto) {
   card.className = "product-card";
   card.dataset.productId = producto.id;
 
-  // Carrusel
+  // Carrusel (dos capas para transición de difuminado)
   const carousel = document.createElement("div");
   carousel.className = "product-carousel";
   carousel.dataset.index = "0";
+  carousel.dataset.visibleLayer = "0";
 
-  const img = document.createElement("img");
-  img.className = "product-image";
-  img.alt = producto.nombre;
-  img.src = producto.imagenes[0] || IMAGEN_PLACEHOLDER;
-  aplicarFallbackImagen(img);
-  carousel.appendChild(img);
+  const img0 = document.createElement("img");
+  img0.className = "product-image carousel-img-current";
+  img0.dataset.layer = "0";
+  img0.alt = producto.nombre;
+  img0.src = producto.imagenes[0] || IMAGEN_POR_DEFECTO;
+  aplicarFallbackImagen(img0);
+
+  const img1 = document.createElement("img");
+  img1.className = "product-image";
+  img1.dataset.layer = "1";
+  img1.alt = producto.nombre;
+  img1.src = producto.imagenes[0] || IMAGEN_POR_DEFECTO;
+  aplicarFallbackImagen(img1);
+
+  carousel.appendChild(img0);
+  carousel.appendChild(img1);
 
   const nav = document.createElement("div");
   nav.className = "carousel-nav";
@@ -187,7 +197,7 @@ function crearTarjetaProducto(producto) {
   moreBtn.textContent = "Ver más";
 
   moreBtn.addEventListener("click", () => {
-    const imgSrc = carousel.querySelector(".product-image")?.src || producto.imagenes[0] || "";
+    const imgSrc = carousel.querySelector(".product-image.carousel-img-current")?.src || producto.imagenes[0] || "";
     abrirModalProducto(producto, imgSrc);
   });
 
@@ -198,13 +208,15 @@ function crearTarjetaProducto(producto) {
   card.appendChild(body);
   card.appendChild(footer);
 
-  // Eventos carrusel
-  btnPrev.addEventListener("click", () =>
-    cambiarImagen(producto, carousel, -1)
-  );
-  btnNext.addEventListener("click", () =>
-    cambiarImagen(producto, carousel, 1)
-  );
+  // Eventos carrusel (al cambiar manualmente se reinicia el contador de 5 s de ese producto)
+  btnPrev.addEventListener("click", () => {
+    cambiarImagen(producto, carousel, -1);
+    reiniciarTimerCarrusel(producto);
+  });
+  btnNext.addEventListener("click", () => {
+    cambiarImagen(producto, carousel, 1);
+    reiniciarTimerCarrusel(producto);
+  });
 
   return card;
 }
@@ -222,32 +234,62 @@ function renderizarCatalogo() {
 // =========================
 // Carrusel por producto
 // =========================
+const CARRUSEL_INTERVALO_MS = 5000;
+const carouselTimers = {};
+
 function cambiarImagen(producto, carouselEl, paso) {
-  const total = producto.imagenes.length || 1;
+  const total = Math.max(producto.imagenes.length, 1);
   let indexActual = Number(carouselEl.dataset.index || "0");
   indexActual = (indexActual + paso + total) % total;
   carouselEl.dataset.index = String(indexActual);
 
-  const imgEl = carouselEl.querySelector(".product-image");
-  if (imgEl) {
-    imgEl.src = producto.imagenes[indexActual] || producto.imagenes[0] || IMAGEN_PLACEHOLDER;
+  const visibleLayer = carouselEl.dataset.visibleLayer === "1" ? "1" : "0";
+  const nextLayer = visibleLayer === "1" ? "0" : "1";
+  const imgActual = carouselEl.querySelector(`.product-image[data-layer="${visibleLayer}"]`);
+  const imgSiguiente = carouselEl.querySelector(`.product-image[data-layer="${nextLayer}"]`);
+  if (!imgSiguiente) return;
+
+  const urlSiguiente = producto.imagenes[indexActual] || producto.imagenes[0] || IMAGEN_POR_DEFECTO;
+  imgSiguiente.src = urlSiguiente;
+  aplicarFallbackImagen(imgSiguiente);
+
+  function mostrarSiguiente() {
+    imgActual?.classList.remove("carousel-img-current");
+    imgSiguiente.classList.add("carousel-img-current");
+    carouselEl.dataset.visibleLayer = nextLayer;
+  }
+
+  if (imgSiguiente.complete && imgSiguiente.naturalHeight > 0) {
+    mostrarSiguiente();
+  } else {
+    imgSiguiente.onload = mostrarSiguiente;
   }
 }
 
-function iniciarCarruselesAutomaticos() {
-  const intervalMs = 5000;
+function programarSiguienteAvance(producto) {
+  if (carouselTimers[producto.id] != null) {
+    clearTimeout(carouselTimers[producto.id]);
+  }
+  carouselTimers[producto.id] = setTimeout(() => {
+    const card = document.querySelector(
+      `.product-card[data-product-id="${producto.id}"]`
+    );
+    if (!card) return;
+    const carousel = card.querySelector(".product-carousel");
+    if (!carousel) return;
+    cambiarImagen(producto, carousel, 1);
+    programarSiguienteAvance(producto);
+  }, CARRUSEL_INTERVALO_MS);
+}
 
-  setInterval(() => {
-    productos.forEach((producto) => {
-      const card = document.querySelector(
-        `.product-card[data-product-id="${producto.id}"]`
-      );
-      if (!card) return;
-      const carousel = card.querySelector(".product-carousel");
-      if (!carousel) return;
-      cambiarImagen(producto, carousel, 1);
-    });
-  }, intervalMs);
+function reiniciarTimerCarrusel(producto) {
+  programarSiguienteAvance(producto);
+}
+
+function iniciarCarruselesAutomaticos() {
+  productos.forEach((producto) => {
+    programarSiguienteAvance(producto);
+  });
 }
 
 // =========================
@@ -425,7 +467,7 @@ function abrirModalProducto(producto, imgSrc) {
   titleEl.textContent = producto.nombre;
   descEl.textContent = producto.descripcion;
   if (imgEl) {
-    imgEl.src = imgSrc || producto.imagenes[0] || IMAGEN_PLACEHOLDER;
+    imgEl.src = imgSrc || producto.imagenes[0] || IMAGEN_POR_DEFECTO;
     imgEl.alt = producto.nombre;
     aplicarFallbackImagen(imgEl);
   }
