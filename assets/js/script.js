@@ -596,7 +596,7 @@ function configurarMenuMovil() {
 // Contador de visitas (Supabase)
 // Funciona en GitHub Pages: solo se llama a la API desde el navegador (fetch).
 // =========================
-const SUPABASE_URL = "https://hdzmpodpgqtnpkovjaki.supabase.com";
+const SUPABASE_URL = "https://hdzmpodpgqtnpkovjaki.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhkem1wb2RwZ3F0bnBrb3ZqYWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3ODQxNDIsImV4cCI6MjA4NjM2MDE0Mn0.FvpuG3cRpxz4ZNolTlS5FIk41RwgRZHJXmg4gJmluHQ";
 
 function actualizarContadorVisitas() {
