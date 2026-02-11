@@ -551,6 +551,27 @@ function configurarMenuMovil() {
 }
 
 // =========================
+// Contador de visitas (CountAPI - gratuito, sin backend)
+// =========================
+const CONTADOR_NAMESPACE = "tsdelicias";
+const CONTADOR_KEY = "landing";
+
+function actualizarContadorVisitas() {
+  const el = document.getElementById("visit-count");
+  if (!el) return;
+  fetch(`https://api.countapi.xyz/hit/${CONTADOR_NAMESPACE}/${CONTADOR_KEY}`)
+    .then((res) => res.json())
+    .then((data) => {
+      if (typeof data.value === "number") {
+        el.textContent = data.value.toLocaleString("es-CL");
+      }
+    })
+    .catch(() => {
+      el.textContent = "—";
+    });
+}
+
+// =========================
 // Inicialización
 // =========================
 document.addEventListener("DOMContentLoaded", () => {
@@ -566,5 +587,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (yearEl) {
     yearEl.textContent = String(new Date().getFullYear());
   }
+
+  actualizarContadorVisitas();
 });
 

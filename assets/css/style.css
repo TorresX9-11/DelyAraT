@@ -651,6 +651,12 @@ main {
   color: rgba(210, 190, 168, 0.9);
 }
 
+.footer-visits {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  color: rgba(190, 170, 150, 0.85);
+}
+
 /* =========================
    Modal detalle producto
    ========================= */
