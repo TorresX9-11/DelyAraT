@@ -593,32 +593,44 @@ function configurarMenuMovil() {
 }
 
 // =========================
-// Contador de visitas (CountAPI + proxy CORS para GitHub Pages)
-// El proxy evita el bloqueo CORS: el navegador no puede desactivar CORS;
-// el servidor de la API debe permitir tu dominio. Usamos un proxy público.
+// Contador de visitas (Supabase)
+// Funciona en GitHub Pages: solo se llama a la API desde el navegador (fetch).
 // =========================
-const CONTADOR_NAMESPACE = "tsdelicias";
-const CONTADOR_KEY = "landing";
-const CORS_PROXY = "https://api.allorigins.win/raw?url=";
+const SUPABASE_URL = "https://hdzmpodpgqtnpkovjaki.supabase.com";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhkem1wb2RwZ3F0bnBrb3ZqYWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3ODQxNDIsImV4cCI6MjA4NjM2MDE0Mn0.FvpuG3cRpxz4ZNolTlS5FIk41RwgRZHJXmg4gJmluHQ";
 
 function actualizarContadorVisitas() {
   const el = document.getElementById("visit-count");
   if (!el) return;
-  const urlCountAPI = `https://api.countapi.xyz/hit/${CONTADOR_NAMESPACE}/${CONTADOR_KEY}`;
-  const urlConProxy = CORS_PROXY + encodeURIComponent(urlCountAPI);
 
-  fetch(urlConProxy)
-    .then((res) => res.json())
-    .then((data) => {
-      if (typeof data.value === "number") {
-        el.textContent = data.value.toLocaleString("es-CL");
-      } else {
-        el.textContent = "—";
-      }
+  const configurado = SUPABASE_URL && !SUPABASE_URL.includes("TU_PROJECT") && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== "tu_anon_key_aqui";
+  if (configurado) {
+    fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_visits`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: "{}",
     })
-    .catch(() => {
-      el.textContent = "—";
-    });
+      .then((res) => {
+        if (!res.ok) throw new Error(res.statusText);
+        return res.json();
+      })
+      .then((count) => {
+        if (typeof count === "number") {
+          el.textContent = count.toLocaleString("es-CL");
+        } else {
+          el.textContent = "—";
+        }
+      })
+      .catch(() => {
+        el.textContent = "—";
+      });
+  } else {
+    el.textContent = "—";
+  }
 }
 
 // =========================
