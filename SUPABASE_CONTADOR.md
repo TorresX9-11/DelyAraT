@@ -28,13 +28,14 @@ CREATE TABLE IF NOT EXISTS site_stats (
 INSERT INTO site_stats (id, visits) VALUES (1, 0)
 ON CONFLICT (id) DO NOTHING;
 
--- Tabla para guardar cada visita con fecha y hora exactas
+-- Tabla: cada fila = una visita, con el número de visita (como el contador) y fecha/hora
 CREATE TABLE IF NOT EXISTS visits_log (
   id BIGSERIAL PRIMARY KEY,
+  visita BIGINT NOT NULL,
   visited_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Función: incrementa el contador, guarda la visita con fecha/hora y devuelve el total
+-- Función: incrementa el contador, guarda la visita (número + fecha/hora) y devuelve el total
 CREATE OR REPLACE FUNCTION log_visit()
 RETURNS BIGINT
 LANGUAGE plpgsql
@@ -45,7 +46,7 @@ DECLARE
   new_count BIGINT;
 BEGIN
   UPDATE site_stats SET visits = visits + 1 WHERE id = 1 RETURNING visits INTO new_count;
-  INSERT INTO visits_log (visited_at) VALUES (now());
+  INSERT INTO visits_log (visita, visited_at) VALUES (new_count, now());
   RETURN new_count;
 END;
 $$;
@@ -54,16 +55,14 @@ $$;
 GRANT EXECUTE ON FUNCTION public.log_visit() TO anon;
 ```
 
-**Si ya tenías el contador con `increment_visits`:** ejecuta solo este bloque para añadir el registro de visitas (no borra nada):
+**Si ya tenías el contador y la tabla `visits_log`:** ejecuta este bloque para añadir la columna "visita" (número de visita = contador) y actualizar la función. No borra datos.
 
 ```sql
--- Tabla para guardar cada visita con fecha y hora
-CREATE TABLE IF NOT EXISTS visits_log (
-  id BIGSERIAL PRIMARY KEY,
-  visited_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+-- Añadir columna "visita" (el número que ves en la web: 1, 2, 3, 4...)
+ALTER TABLE visits_log ADD COLUMN IF NOT EXISTS visita BIGINT;
+UPDATE visits_log SET visita = id WHERE visita IS NULL;
 
--- Nueva función que incrementa, guarda la visita y devuelve el total
+-- Función actualizada: guarda el número de visita + fecha/hora
 CREATE OR REPLACE FUNCTION log_visit()
 RETURNS BIGINT
 LANGUAGE plpgsql
@@ -74,7 +73,7 @@ DECLARE
   new_count BIGINT;
 BEGIN
   UPDATE site_stats SET visits = visits + 1 WHERE id = 1 RETURNING visits INTO new_count;
-  INSERT INTO visits_log (visited_at) VALUES (now());
+  INSERT INTO visits_log (visita, visited_at) VALUES (new_count, now());
   RETURN new_count;
 END;
 $$;
@@ -115,16 +114,75 @@ Haz commit y push de los cambios. En GitHub Pages el contador se actualizará en
 
 ## Ver las visitas con fecha y hora
 
-En Supabase ve a **Table Editor** → tabla **visits_log**. Ahí verás cada visita con:
+En Supabase ve a **Table Editor** → tabla **visits_log**. Verás algo así:
 
-- **id**: número de registro
-- **visited_at**: fecha y hora de la visita (en UTC; Supabase puede mostrarla en tu zona horaria según la configuración)
+| id | visita | visited_at           |
+|----|--------|----------------------|
+| 1  | 1      | 2026-02-10 18:00:00  |
+| 2  | 2      | 2026-02-10 19:30:00  |
+| 4  | 4      | 2026-02-11 14:15:00  |
 
-Para ver en hora local (ej. Chile) en SQL:
+- **visita**: el mismo número que el contador en la web (Visita 1, Visita 2, Visita 4…).
+- **visited_at**: fecha y hora de esa visita (día, mes, año, hora).
+
+Así puedes relacionar directo: “Visita 4” en la web = la fila con `visita = 4` y su fecha/hora.
+
+Para ver en hora Chile en SQL:
 
 ```sql
-SELECT id, visited_at AT TIME ZONE 'America/Santiago' AS visita_chile
+SELECT visita AS "Visita", visited_at AT TIME ZONE 'America/Santiago' AS "Fecha y hora (Chile)"
 FROM visits_log
-ORDER BY id DESC
+ORDER BY visita DESC
 LIMIT 100;
 ```
+
+---
+
+## Reiniciar el contador (y vaciar el registro)
+
+En el footer de la web hay un botón **"Reiniciar contador"**. Al pulsarlo se pide una **contraseña de administrador**. Si es correcta, se hace lo siguiente en la base de datos:
+
+- `site_stats.visits` pasa a **0**
+- Se vacía la tabla **visits_log** (todas las filas)
+
+Así contador y tabla quedan sincronizados y la siguiente visita será la #1.
+
+### Configurar la contraseña de reinicio
+
+Ejecuta este SQL **una sola vez** en Supabase (SQL Editor):
+
+```sql
+-- Tabla para guardar la contraseña de reinicio (solo tú la ves en Supabase)
+CREATE TABLE IF NOT EXISTS _config (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+-- Contraseña para el botón "Reiniciar contador" (cámbiala por una que solo tú sepas)
+INSERT INTO _config (key, value) VALUES ('reset_secret', 'cambiar_esta_clave_123')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+
+-- Función: solo reinicia si la contraseña coincide
+CREATE OR REPLACE FUNCTION reset_visits(p_secret TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  secret_ok BOOLEAN;
+BEGIN
+  SELECT (SELECT value FROM _config WHERE key = 'reset_secret') = p_secret INTO secret_ok;
+  IF NOT secret_ok THEN
+    RETURN FALSE;
+  END IF;
+  TRUNCATE TABLE visits_log;
+  UPDATE site_stats SET visits = 0 WHERE id = 1;
+  RETURN TRUE;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.reset_visits(TEXT) TO anon;
+```
+
+**Cambiar la contraseña más adelante:** en **Table Editor** → tabla **`_config`** → edita la fila con `key = 'reset_secret'` y pon el `value` que quieras (esa será la contraseña para el botón).

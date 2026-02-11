@@ -633,6 +633,31 @@ function actualizarContadorVisitas() {
   }
 }
 
+function reiniciarContadorVisitas() {
+  const secret = prompt("Contraseña de administrador para reiniciar el contador:");
+  if (secret === null || secret === "") return;
+
+  fetch(`${SUPABASE_URL}/rest/v1/rpc/reset_visits`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ p_secret: secret }),
+  })
+    .then((res) => res.json())
+    .then((ok) => {
+      if (ok === true) {
+        document.getElementById("visit-count").textContent = "0";
+        alert("Contador y registro de visitas reiniciados correctamente. La próxima visita será la #1.");
+      } else {
+        alert("Contraseña incorrecta.");
+      }
+    })
+    .catch(() => alert("No se pudo conectar. Comprueba la configuración de Supabase."));
+}
+
 // =========================
 // Inicialización
 // =========================
@@ -651,5 +676,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   actualizarContadorVisitas();
+
+  const btnReiniciar = document.getElementById("btn-reiniciar-contador");
+  if (btnReiniciar) {
+    btnReiniciar.addEventListener("click", reiniciarContadorVisitas);
+  }
 });
 
