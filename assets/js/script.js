@@ -654,10 +654,70 @@ function inicializarTextos() {
 }
 
 // =========================
+// SEO: meta tags y datos estructurados (JSON-LD)
+// Actualiza og:url, og:image, canonical y añade schema LocalBusiness
+// =========================
+function inicializarSEO() {
+  const seo = CONFIG.seo;
+  const siteUrl = seo?.siteUrl?.trim();
+  const baseUrl = siteUrl ? siteUrl.replace(/\/$/, "") : "";
+
+  if (baseUrl) {
+    const canon = document.querySelector('link[rel="canonical"]');
+    if (!canon) {
+      const link = document.createElement("link");
+      link.rel = "canonical";
+      link.href = baseUrl + "/";
+      document.head.appendChild(link);
+    } else {
+      canon.href = baseUrl + "/";
+    }
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (!ogUrl) {
+      const m = document.createElement("meta");
+      m.setAttribute("property", "og:url");
+      m.content = baseUrl + "/";
+      document.head.appendChild(m);
+    } else {
+      ogUrl.content = baseUrl + "/";
+    }
+    const imgPath = seo?.imagenRedes || "assets/img/Logos/LogoFinal.png";
+    const imgUrl = imgPath.startsWith("http") ? imgPath : baseUrl + "/" + imgPath.replace(/^\//, "");
+    const ogImg = document.querySelector('meta[property="og:image"]');
+    if (ogImg) ogImg.content = imgUrl;
+  }
+
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "FoodEstablishment",
+    name: "T&S Delicias",
+    description: "Postres caseros hechos a mano en Temuco. Cupcakes, flan, tiramisú, promos y más. Pedidos por encargo.",
+    image: baseUrl ? baseUrl + "/assets/img/Logos/LogoFinal.png" : "assets/img/Logos/LogoFinal.png",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Temuco",
+      addressRegion: "Araucanía",
+      addressCountry: "CL",
+      streetAddress: CONFIG.ubicacion?.direccion || "Zona Queillen, Temuco",
+    },
+    url: baseUrl ? baseUrl + "/" : undefined,
+    sameAs: CONFIG.contacto?.instagram?.url ? [CONFIG.contacto.instagram.url] : undefined,
+    priceRange: "$$",
+    servesCuisine: "Postres",
+  };
+  if (!schema.url) delete schema.url;
+  const script = document.createElement("script");
+  script.type = "application/ld+json";
+  script.textContent = JSON.stringify(schema);
+  document.head.appendChild(script);
+}
+
+// =========================
 // Inicialización
 // =========================
 document.addEventListener("DOMContentLoaded", () => {
   inicializarTextos();
+  inicializarSEO();
   renderizarCatalogo();
   renderizarSimulador();
   iniciarCarruselesAutomaticos();

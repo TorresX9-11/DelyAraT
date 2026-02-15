@@ -1,0 +1,9 @@
+# robots.txt para T&S Delicias
+# Permite a todos los buscadores indexar la página
+
+User-agent: *
+Allow: /
+
+# Indica la ubicación del sitemap (reemplaza con tu URL real cuando tengas dominio)
+# Ejemplo: Sitemap: https://www.tysdelicias.cl/sitemap.xml
+# Sitemap: https://TU-DOMINIO.com/sitemap.xml

@@ -154,6 +154,38 @@ ubicacion: {
 
 ---
 
+---
+
+## 🔍 SEO y visibilidad en buscadores
+
+La página incluye meta etiquetas y archivos para mejorar el alcance cuando busquen "postres Temuco", "cupcakes Queillen", etc.
+
+**Archivos creados:**
+- `robots.txt` – Indica a buscadores que pueden indexar la página.
+- `sitemap.xml` – Lista las URLs de tu sitio para que Google las encuentre más rápido.
+
+**Cuando tengas tu dominio (ej: https://www.tysdelicias.cl):**
+
+1. **En `config.js`**, busca `seo` y pon tu URL:
+```javascript
+seo: {
+  siteUrl: "https://www.tysdelicias.cl",  // ← Tu URL real
+  imagenRedes: "assets/img/Logos/LogoFinal.png",
+},
+```
+
+2. **En `sitemap.xml`** – Reemplaza `https://TU-DOMINIO.com` con tu URL real en la etiqueta `<loc>`.
+
+3. **En `robots.txt`** – Descomenta y edita la línea del Sitemap:
+```
+Sitemap: https://www.tysdelicias.cl/sitemap.xml
+```
+
+4. **Registra tu sitio en Google Search Console** – https://search.google.com/search-console  
+   Sube el sitemap para que Google indexe tu página más rápido.
+
+---
+
 ## 📋 Resumen rápido
 
 | Qué cambiar | Dónde en `config.js` |
@@ -163,5 +195,6 @@ ubicacion: {
 | Textos de la página | `textos.hero`, `textos.catalogo`, etc. |
 | Número WhatsApp | `contacto.whatsapp.numero` |
 | URL Instagram | `contacto.instagram.url` |
+| URL del sitio (SEO) | `seo.siteUrl` |
 | Dirección | `ubicacion.direccion` |
 | Mapa | `ubicacion.mapaEmbedUrl` |

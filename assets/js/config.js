@@ -208,6 +208,15 @@ const CONFIG = {
   },
 
   // =========================
+  // SEO Y VISIBILIDAD
+  // Configura esto cuando tengas tu dominio para mejorar el alcance en buscadores
+  // =========================
+  seo: {
+    siteUrl: "", // Ej: "https://www.tysdelicias.cl" - Déjalo vacío hasta que tengas dominio
+    imagenRedes: "assets/img/Logos/LogoFinal.png", // Imagen para compartir en redes (se usará con siteUrl si existe)
+  },
+
+  // =========================
   // UBICACIÓN
   // =========================
   ubicacion: {
