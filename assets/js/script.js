@@ -1,81 +1,8 @@
 // =========================
-// Datos de productos
+// Usar configuración centralizada
+// Todos los datos editables están en config.js
 // =========================
-const productos = [
-  {
-    id: "flan-casero",
-    nombre: "Flan casero",
-    descripcion: "Flan tradicional, suave y cremoso, con caramelo casero.",
-    precioUnidad: 1200,
-    precioMayor: 1000,
-    imagenes: [
-      "assets/img/flan-1.jpg",
-      "assets/img/flan-2.jpg",
-      "assets/img/flan-3.jpg",
-    ],
-  },
-  {
-    id: "cupcakes-frutilla-chips",
-    nombre: "Cupcakes frutilla o chips",
-    descripcion: "Cupcakes esponjosos con topping de frutilla o chips de chocolate.",
-    precioUnidad: 1200,
-    precioMayor: 1000,
-    imagenes: [
-      "assets/img/cupcakes-1.jpg",
-      "assets/img/cupcakes-2.jpg",
-      "assets/img/cupcakes-3.jpg",
-    ],
-  },
-  {
-    id: "promo-san-valentin",
-    nombre: "Promo caja San Valentín",
-    descripcion: "Caja especial temática San Valentín, perfecta para regalar.",
-    precioUnidad: 3000,
-    precioMayor: 3000,
-    imagenes: [
-      "assets/img/sanvalentin-1.jpg",
-      "assets/img/sanvalentin-2.jpg",
-      "assets/img/sanvalentin-3.jpg",
-    ],
-  },
-  {
-    id: "tiramisu",
-    nombre: "Tiramisú",
-    descripcion: "Clásico tiramisú con café y crema suave, armado en capas.",
-    precioUnidad: 2500,
-    precioMayor: 2200,
-    imagenes: [
-      "assets/img/tiramisu-1.jpg",
-      "assets/img/tiramisu-2.jpg",
-      "assets/img/tiramisu-3.jpg",
-    ],
-  },
-  {
-    id: "promo-6-cupcakes",
-    nombre: "Promo 6 cupcakes",
-    descripcion: "Caja con 6 cupcakes surtidos, ideal para compartir.",
-    precioUnidad: 6500,
-    precioMayor: 6500,
-    imagenes: [
-      "assets/img/promo6-1.jpg",
-      "assets/img/promo6-2.jpg",
-      "assets/img/promo6-3.jpg",
-    ],
-  },
-  // Estructura preparada para que agregues más postres:
-  // {
-  //   id: "nuevo-postre-1",
-  //   nombre: "Nombre del nuevo postre",
-  //   descripcion: "Descripción breve del postre.",
-  //   precioUnidad: 0,
-  //   precioMayor: 0,
-  //   imagenes: [
-  //     "assets/img/nuevo-1.jpg",
-  //     "assets/img/nuevo-2.jpg",
-  //     "assets/img/nuevo-3.jpg",
-  //   ],
-  // },
-];
+const productos = CONFIG.productos;
 
 // =========================
 // Utilidades
@@ -171,7 +98,7 @@ function crearTarjetaProducto(producto) {
   if (producto.precioMayor && producto.precioMayor !== producto.precioUnidad) {
     priceBulk.textContent = `${formatearPrecio(
       producto.precioMayor
-    )} por mayor (≥4 uds)`;
+    )} por mayor (≥12 uds)`;
   } else {
     priceBulk.textContent = "Aplican valores especiales según promo.";
   }
@@ -351,7 +278,7 @@ function actualizarSubtotalProducto(producto, filaEl) {
   const cantidad = obtenerCantidadDesdeFila(filaEl);
   let precioUsado = producto.precioUnidad;
 
-  if (cantidad >= 4) {
+  if (cantidad >= 12) {
     precioUsado = producto.precioMayor;
   }
 
@@ -379,7 +306,7 @@ function actualizarTotalGeneral() {
     const cantidad = obtenerCantidadDesdeFila(tr);
     if (!cantidad) return;
 
-    const precio = cantidad >= 4 ? producto.precioMayor : producto.precioUnidad;
+    const precio = cantidad >= 12 ? producto.precioMayor : producto.precioUnidad;
     total += cantidad * precio;
   });
 
@@ -404,7 +331,7 @@ function construirMensajeWhatsApp() {
     const cantidad = obtenerCantidadDesdeFila(tr);
     if (!cantidad) return;
 
-    const precio = cantidad >= 4 ? producto.precioMayor : producto.precioUnidad;
+    const precio = cantidad >= 12 ? producto.precioMayor : producto.precioUnidad;
     const subtotal = cantidad * precio;
     total += subtotal;
 
@@ -419,11 +346,9 @@ function construirMensajeWhatsApp() {
     return "Hola, me gustaría consultar por sus postres y promos disponibles.";
   }
 
-  const encabezado = "Hola, me gustaría agendar un pedido con el siguiente detalle:\n\n";
+  const encabezado = CONFIG.contacto.whatsapp.mensajeInicial;
   const cuerpo = lineas.join("\n");
-  const pie = `\n\nTotal estimado: ${formatearPrecio(
-    total
-  )}\n\n¿Podemos coordinar día y horario de retiro/entrega?`;
+  const pie = `\n\nTotal estimado: ${formatearPrecio(total)}${CONFIG.contacto.whatsapp.mensajeFinal}`;
 
   return encabezado + cuerpo + pie;
 }
@@ -435,10 +360,7 @@ function configurarBotonesContacto() {
   if (btnWhatsapp) {
     btnWhatsapp.addEventListener("click", () => {
       const mensaje = encodeURIComponent(construirMensajeWhatsApp());
-
-      // Reemplaza el número por el de T&S Delicias en formato internacional, por ejemplo:
-      // 569XXXXXXXX para Chile.
-      const numero = "56937348757";
+      const numero = CONFIG.contacto.whatsapp.numero;
       const url = `https://wa.me/${numero}?text=${mensaje}`;
       window.open(url, "_blank");
     });
@@ -446,8 +368,7 @@ function configurarBotonesContacto() {
 
   if (btnInstagram) {
     btnInstagram.addEventListener("click", () => {
-      // Reemplaza la URL por el perfil real de Instagram de T&S Delicias
-      const url = "https://www.instagram.com/tu_usuario_delyarit/";
+      const url = CONFIG.contacto.instagram.url;
       window.open(url, "_blank");
     });
   }
@@ -473,7 +394,7 @@ function abrirModalProducto(producto, imgSrc) {
   }
   const precioMayorTexto =
     producto.precioMayor !== producto.precioUnidad
-      ? `Por mayor (≥4 uds): ${formatearPrecio(producto.precioMayor)}`
+      ? `Por mayor (≥12 uds): ${formatearPrecio(producto.precioMayor)}`
       : "Precio único";
   pricesEl.innerHTML = `<p><strong>Precio unidad:</strong> ${formatearPrecio(producto.precioUnidad)}</p><p>${precioMayorTexto}</p>`;
 
@@ -659,9 +580,84 @@ function reiniciarContadorVisitas() {
 }
 
 // =========================
+// Inicializar textos desde CONFIG
+// =========================
+function inicializarTextos() {
+  const t = CONFIG.textos;
+
+  // Hero
+  const heroTitulo = document.querySelector(".hero-text h2");
+  if (heroTitulo) heroTitulo.textContent = t.hero.titulo;
+  const heroLead = document.querySelector(".hero-lead");
+  if (heroLead) heroLead.textContent = t.hero.textoPrincipal;
+  const heroDetail = document.querySelector(".hero-detail");
+  if (heroDetail) heroDetail.textContent = t.hero.textoDetalle;
+  const heroInstagramLink = document.getElementById("hero-instagram-link");
+  if (heroInstagramLink) {
+    if (CONFIG.contacto?.instagram?.url) heroInstagramLink.href = CONFIG.contacto.instagram.url;
+    const span = heroInstagramLink.querySelector("span");
+    if (span && t.hero.linkInstagram) span.textContent = t.hero.linkInstagram;
+  }
+  const btnCatalogo = document.getElementById("btn-ver-catalogo");
+  if (btnCatalogo) btnCatalogo.textContent = t.hero.botonCatalogo;
+  const heroHighlight = document.querySelector(".hero-highlight");
+  if (heroHighlight) heroHighlight.textContent = t.hero.tarjetaDestacado;
+  const heroSubtext = document.querySelector(".hero-subtext");
+  if (heroSubtext) heroSubtext.textContent = t.hero.tarjetaSubtexto;
+
+  // Catálogo
+  const catalogoTitulo = document.querySelector("#catalogo .section-header h2");
+  if (catalogoTitulo) catalogoTitulo.textContent = t.catalogo.titulo;
+  const catalogoSubtitulo = document.querySelector("#catalogo .section-header p");
+  if (catalogoSubtitulo) catalogoSubtitulo.textContent = t.catalogo.subtitulo;
+  const btnSimular = document.getElementById("btn-simular-compra");
+  if (btnSimular) btnSimular.textContent = t.catalogo.botonSimular;
+
+  // Simulador
+  const simuladorTitulo = document.querySelector("#simulador .section-header h2");
+  if (simuladorTitulo) simuladorTitulo.textContent = t.simulador.titulo;
+  const simuladorSubtitulo = document.querySelector("#simulador .section-header p");
+  if (simuladorSubtitulo) simuladorSubtitulo.textContent = t.simulador.subtitulo;
+  const simuladorNota = document.querySelector(".simulator-note");
+  if (simuladorNota) simuladorNota.textContent = t.simulador.nota;
+  const btnWhatsapp = document.getElementById("btn-whatsapp");
+  if (btnWhatsapp) btnWhatsapp.textContent = t.simulador.botonWhatsapp;
+  const btnInstagram = document.getElementById("btn-instagram");
+  if (btnInstagram) btnInstagram.textContent = t.simulador.botonInstagram;
+
+  // Ubicación
+  const ubicacionTitulo = document.querySelector("#ubicacion .section-header h2");
+  if (ubicacionTitulo) ubicacionTitulo.textContent = t.ubicacion.titulo;
+  const ubicacionSubtitulo = document.querySelector("#ubicacion .section-header p");
+  if (ubicacionSubtitulo) ubicacionSubtitulo.textContent = t.ubicacion.subtitulo;
+  const puntoRetiro = document.querySelector(".location-info h3");
+  if (puntoRetiro) puntoRetiro.textContent = t.ubicacion.puntoRetiro;
+  const direccion = document.getElementById("location-address");
+  if (direccion) direccion.textContent = CONFIG.ubicacion.direccion;
+  const notaRetiro = document.querySelector(".location-note");
+  if (notaRetiro) notaRetiro.textContent = t.ubicacion.notaRetiro;
+
+  // Footer
+  const footerCopyright = document.querySelector(".footer-content p:first-child");
+  if (footerCopyright) {
+    const year = document.getElementById("current-year")?.textContent || new Date().getFullYear();
+    footerCopyright.innerHTML = `© ${year} ${t.footer.copyright}`;
+  }
+  const footerNota = document.querySelector(".footer-note");
+  if (footerNota) footerNota.textContent = t.footer.nota;
+
+  // Mapa
+  const mapaIframe = document.querySelector(".location-map iframe");
+  if (mapaIframe && CONFIG.ubicacion.mapaEmbedUrl) {
+    mapaIframe.src = CONFIG.ubicacion.mapaEmbedUrl;
+  }
+}
+
+// =========================
 // Inicialización
 // =========================
 document.addEventListener("DOMContentLoaded", () => {
+  inicializarTextos();
   renderizarCatalogo();
   renderizarSimulador();
   iniciarCarruselesAutomaticos();
